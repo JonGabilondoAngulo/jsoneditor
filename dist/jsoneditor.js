@@ -25,7 +25,7 @@
  *
  * @author  Jos de Jong, <wjosdejong@gmail.com>
  * @version 5.5.6
- * @date    2016-06-15
+ * @date    2016-08-08
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -167,7 +167,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        'ace', 'theme',
 	        'ajv', 'schema',
 	        'onChange', 'onEditable', 'onError', 'onModeChange',
-	        'escapeUnicode', 'history', 'search', 'mode', 'modes', 'name', 'indentation', 'sortObjectKeys'
+	        'escapeUnicode', 'history', 'search', 'mode', 'modes', 'name', 'indentation', 'sortObjectKeys',
+	          'expandCollapse', 'fieldsSorter', 'nodeFormatter'
 	      ];
 
 	      Object.keys(options).forEach(function (option) {
@@ -8482,7 +8483,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    history: true,
 	    mode: 'tree',
 	    name: undefined,   // field name of root node
-	    schema: null
+	    schema: null,
+	    expandCollapse: true,
+	    fieldsSorter: undefined,
+	    nodeFormatter: undefined,
 	  };
 
 	  // copy all options
@@ -9050,22 +9054,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this.frame.appendChild(this.menu);
 
 	  // create expand all button
-	  var expandAll = document.createElement('button');
-	  expandAll.className = 'jsoneditor-expand-all';
-	  expandAll.title = 'Expand all fields';
-	  expandAll.onclick = function () {
-	    editor.expandAll();
-	  };
-	  this.menu.appendChild(expandAll);
+	  if (this.options.expandCollapse) {
+	    var expandAll = document.createElement('button');
+	    expandAll.className = 'jsoneditor-expand-all';
+	    expandAll.title = 'Expand all fields';
+	    expandAll.onclick = function () {
+	      editor.expandAll();
+	    };
+	    this.menu.appendChild(expandAll);
 
-	  // create expand all button
-	  var collapseAll = document.createElement('button');
-	  collapseAll.title = 'Collapse all fields';
-	  collapseAll.className = 'jsoneditor-collapse-all';
-	  collapseAll.onclick = function () {
-	    editor.collapseAll();
-	  };
-	  this.menu.appendChild(collapseAll);
+	    // create expand all button
+	    var collapseAll = document.createElement('button');
+	    collapseAll.title = 'Collapse all fields';
+	    collapseAll.className = 'jsoneditor-collapse-all';
+	    collapseAll.onclick = function () {
+	      editor.collapseAll();
+	    };
+	    this.menu.appendChild(collapseAll);
+	  }
 
 	  // create undo/redo buttons
 	  if (this.history) {
@@ -12218,7 +12224,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        child = new Node(this.editor, {
 	          value: childValue
 	        });
-	        this.appendChild(child);
+
+	        // Call node formatter
+	        if (this.editor.options.nodeFormatter instanceof Function) {
+	          child = this.editor.options.nodeFormatter(child); // could return null
+	        }
+	        if (child) {
+	          this.appendChild(child);
+	        }
 	      }
 	    }
 	    this.value = '';
@@ -12235,7 +12248,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	            field: childField,
 	            value: childValue
 	          });
-	          this.appendChild(child);
+
+	          // Call node formatter
+	          if (this.editor.options.nodeFormatter instanceof Function) {
+	            child = this.editor.options.nodeFormatter(child);
+	          }
+	          if (child) {
+	            this.appendChild(child);
+	          }
 	        }
 	      }
 	    }
@@ -12399,6 +12419,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  if (!this.expanded) {
 	    return;
+	  }
+
+	  // Sort the order of nodes
+	  if ( this.editor.options.fieldsSorter instanceof Function) {
+	    this.childs = this.editor.options.fieldsSorter(childs);
 	  }
 
 	  var tr = this.dom.tr;
@@ -13878,6 +13903,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      domValue.innerHTML = this._escapeHTML(this.value);
 	      util.removeClassName(this.dom.tr, 'jsoneditor-expandable');
 	    }
+	  }
+
+	  // format the node, this is our last chance
+	  if (this.editor.options.nodeFormatter instanceof Function) {
+	    this.editor.options.nodeFormatter(this);
 	  }
 
 	  // update field and value

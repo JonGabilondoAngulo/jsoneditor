@@ -296,7 +296,14 @@ Node.prototype.setValue = function(value, type) {
         child = new Node(this.editor, {
           value: childValue
         });
-        this.appendChild(child);
+
+        // Call node formatter
+        if (this.editor.options.nodeFormatter instanceof Function) {
+          child = this.editor.options.nodeFormatter(child); // could return null
+        }
+        if (child) {
+          this.appendChild(child);
+        }
       }
     }
     this.value = '';
@@ -313,7 +320,14 @@ Node.prototype.setValue = function(value, type) {
             field: childField,
             value: childValue
           });
-          this.appendChild(child);
+
+          // Call node formatter
+          if (this.editor.options.nodeFormatter instanceof Function) {
+            child = this.editor.options.nodeFormatter(child);
+          }
+          if (child) {
+            this.appendChild(child);
+          }
         }
       }
     }
@@ -477,6 +491,11 @@ Node.prototype.showChilds = function() {
   }
   if (!this.expanded) {
     return;
+  }
+
+  // Sort the order of nodes
+  if ( this.editor.options.fieldsSorter instanceof Function) {
+    this.childs = this.editor.options.fieldsSorter(childs);
   }
 
   var tr = this.dom.tr;
@@ -1956,6 +1975,11 @@ Node.prototype.updateDom = function (options) {
       domValue.innerHTML = this._escapeHTML(this.value);
       util.removeClassName(this.dom.tr, 'jsoneditor-expandable');
     }
+  }
+
+  // format the node, this is our last chance
+  if (this.editor.options.nodeFormatter instanceof Function) {
+    this.editor.options.nodeFormatter(this);
   }
 
   // update field and value

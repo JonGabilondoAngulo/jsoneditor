@@ -107,7 +107,10 @@ treemode._setOptions = function (options) {
     history: true,
     mode: 'tree',
     name: undefined,   // field name of root node
-    schema: null
+    schema: null,
+    expandCollapse: true,
+    fieldsSorter: undefined,
+    nodeFormatter: undefined
   };
 
   // copy all options
@@ -675,22 +678,24 @@ treemode._createFrame = function () {
   this.frame.appendChild(this.menu);
 
   // create expand all button
-  var expandAll = document.createElement('button');
-  expandAll.className = 'jsoneditor-expand-all';
-  expandAll.title = 'Expand all fields';
-  expandAll.onclick = function () {
-    editor.expandAll();
-  };
-  this.menu.appendChild(expandAll);
+  if (this.options.expandCollapse) {
+    var expandAll = document.createElement('button');
+    expandAll.className = 'jsoneditor-expand-all';
+    expandAll.title = 'Expand all fields';
+    expandAll.onclick = function () {
+      editor.expandAll();
+    };
+    this.menu.appendChild(expandAll);
 
-  // create expand all button
-  var collapseAll = document.createElement('button');
-  collapseAll.title = 'Collapse all fields';
-  collapseAll.className = 'jsoneditor-collapse-all';
-  collapseAll.onclick = function () {
-    editor.collapseAll();
-  };
-  this.menu.appendChild(collapseAll);
+    // create expand all button
+    var collapseAll = document.createElement('button');
+    collapseAll.title = 'Collapse all fields';
+    collapseAll.className = 'jsoneditor-collapse-all';
+    collapseAll.onclick = function () {
+      editor.collapseAll();
+    };
+    this.menu.appendChild(collapseAll);
+  }
 
   // create undo/redo buttons
   if (this.history) {
